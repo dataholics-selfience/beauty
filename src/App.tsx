@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Header } from './components/Header';
 import { ImageUpload } from './components/ImageUpload';
-import { PromptInput } from './components/PromptInput';
+import { TreatmentSelector } from './components/TreatmentSelector';
 import { LoadingSpinner } from './components/LoadingSpinner';
-import { ImageComparison } from './components/ImageComparison';
+import { EnhancedImageComparison } from './components/EnhancedImageComparison';
 import { transformImage } from './services/replicate';
+import { Treatment } from './types/treatments';
 import { Sparkles, RotateCcw } from 'lucide-react';
 
 type AppState = 'upload' | 'processing' | 'result';
@@ -12,8 +13,9 @@ type AppState = 'upload' | 'processing' | 'result';
 function App() {
   const [state, setState] = useState<AppState>('upload');
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [prompt, setPrompt] = useState('');
+  const [selectedTreatment, setSelectedTreatment] = useState<Treatment | null>(null);
   const [transformedImageUrl, setTransformedImageUrl] = useState<string>('');
+  const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string>('');
 
   const handleImageSelect = (file: File) => {
@@ -25,35 +27,42 @@ function App() {
     setSelectedImage(null);
   };
 
-  const handlePromptChange = (value: string) => {
-    setPrompt(value);
+  const handleTreatmentSelect = (treatment: Treatment) => {
+    setSelectedTreatment(treatment);
     setError('');
   };
 
   const handleGenerate = async () => {
-    if (!selectedImage || !prompt.trim()) {
-      setError('Por favor, envie uma imagem e descreva a transformação desejada.');
+    if (!selectedImage || !selectedTreatment) {
+      setError('Por favor, envie uma imagem e selecione um tratamento.');
       return;
     }
 
     setState('processing');
     setError('');
+    setProgress(0);
 
     try {
-      const resultUrl = await transformImage(selectedImage, prompt);
+      const resultUrl = await transformImage(
+        selectedImage, 
+        selectedTreatment.prompt,
+        setProgress
+      );
       setTransformedImageUrl(resultUrl);
       setState('result');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Erro desconhecido');
       setState('upload');
+      setProgress(0);
     }
   };
 
   const handleReset = () => {
     setState('upload');
     setSelectedImage(null);
-    setPrompt('');
+    setSelectedTreatment(null);
     setTransformedImageUrl('');
+    setProgress(0);
     setError('');
   };
 
@@ -71,9 +80,9 @@ function App() {
                 onImageRemove={handleImageRemove}
               />
               
-              <PromptInput
-                value={prompt}
-                onChange={handlePromptChange}
+              <TreatmentSelector
+                selectedTreatment={selectedTreatment}
+                onTreatmentSelect={handleTreatmentSelect}
               />
 
               {error && (
@@ -84,11 +93,11 @@ function App() {
 
               <button
                 onClick={handleGenerate}
-                disabled={!selectedImage || !prompt.trim()}
+                disabled={!selectedImage || !selectedTreatment}
                 className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white font-semibold py-4 px-8 rounded-xl hover:from-purple-700 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
                 <Sparkles className="w-5 h-5" />
-                Gerar Simulação
+                Simular {selectedTreatment?.name || 'Tratamento'}
               </button>
             </div>
           </div>
@@ -96,15 +105,19 @@ function App() {
 
         {state === 'processing' && (
           <div className="bg-white rounded-2xl shadow-xl p-8">
-            <LoadingSpinner />
+            <LoadingSpinner 
+              progress={progress}
+              treatmentName={selectedTreatment?.name || 'tratamento'}
+            />
           </div>
         )}
 
-        {state === 'result' && selectedImage && transformedImageUrl && (
+        {state === 'result' && selectedImage && transformedImageUrl && selectedTreatment && (
           <div className="space-y-6">
-            <ImageComparison
+            <EnhancedImageComparison
               originalImage={selectedImage}
               transformedImageUrl={transformedImageUrl}
+              treatmentName={selectedTreatment.name}
             />
             
             <div className="text-center">

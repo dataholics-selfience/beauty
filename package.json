@@ -4,12 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "concurrently \"vite\" \"npm run start-backend\"",
+    "start-backend": "node server.js",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
+    "replicate": "^0.25.2",
+    "axios": "^1.6.7",
     "concurrently": "^9.2.0",
     "cors": "^2.8.5",
     "express": "^5.1.0",
