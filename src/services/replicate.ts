@@ -12,8 +12,11 @@ export const transformImage = async (
     onProgress?.(20);
 
     const apiToken = import.meta.env.VITE_REPLICATE_API_TOKEN;
+    console.log('API Token check:', apiToken ? 'Token found' : 'Token not found');
+    console.log('Environment variables:', import.meta.env);
+    
     if (!apiToken) {
-      throw new Error('Token da API Replicate não configurado. Adicione VITE_REPLICATE_API_TOKEN no arquivo .env');
+      throw new Error('Token da API Replicate não configurado. Verifique se VITE_REPLICATE_API_TOKEN está configurado no Netlify.');
     }
 
     onProgress?.(30);
