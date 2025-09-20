@@ -1,5 +1,3 @@
-import axios from 'axios';
-
 export const transformImage = async (
   image: File, 
   prompt: string,
@@ -13,76 +11,9 @@ export const transformImage = async (
     const imageBase64 = await fileToBase64(image);
     onProgress?.(20);
 
-    onProgress?.(30);
-
-    // Enviar para o backend
-    const response = await axios.post('http://localhost:3001/api/transform-image', {
-      image: imageBase64,
-      prompt: prompt
-    }, {
-      timeout: 300000, // 5 minutes timeout
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-
-    onProgress?.(90);
-
-    if (response.data.success) {
-      console.log('Transformação concluída com sucesso!');
-      onProgress?.(100);
-      return response.data.imageUrl;
-    } else {
-      throw new Error(response.data.error || 'Falha na transformação');
-    }
-
-  } catch (error) {
-    console.error('Erro ao transformar imagem:', error);
-    
-    if (axios.isAxiosError(error)) {
-      if (error.code === 'ECONNABORTED') {
-        throw new Error('Timeout: A transformação demorou mais que o esperado');
-      }
-      if (error.response?.data?.error) {
-        throw new Error(`Erro do servidor: ${error.response.data.error}`);
-      }
-      throw new Error(`Erro de conexão: ${error.message}`);
-    }
-    
-    if (error instanceof Error) {
-      throw new Error(`Falha na transformação: ${error.message}`);
-    }
-    
-    throw new Error('Erro desconhecido na transformação da imagem');
-  }
-};
-
-// Função auxiliar para converter arquivo para base64
-const fileToBase64 = (file: File): Promise<string> => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = error => reject(error);
-  });
-};
-
-export const transformImageWithReplicate = async (
-  image: File, 
-  prompt: string,
-  onProgress?: (progress: number) => void
-): Promise<string> => {
-  try {
-    console.log('Iniciando transformação da imagem...');
-    onProgress?.(10);
-
-    // Converter imagem para base64
-    const imageBase64 = await fileToBase64(image);
-    onProgress?.(20);
-
-    const apiToken = process.env.NEXT_PUBLIC_REPLICATE_API_TOKEN;
+    const apiToken = import.meta.env.VITE_REPLICATE_API_TOKEN;
     if (!apiToken) {
-      throw new Error('Token da API Replicate não configurado');
+      throw new Error('Token da API Replicate não configurado. Adicione VITE_REPLICATE_API_TOKEN no arquivo .env');
     }
 
     onProgress?.(30);
@@ -132,6 +63,16 @@ export const transformImageWithReplicate = async (
     
     throw new Error('Erro desconhecido na transformação da imagem');
   }
+};
+
+// Função auxiliar para converter arquivo para base64
+const fileToBase64 = (file: File): Promise<string> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = error => reject(error);
+  });
 };
 
 // Função para fazer polling do resultado
