@@ -11,13 +11,33 @@ Uma aplicação React que simula tratamentos estéticos usando IA da Replicate.
 
 ## Deploy no Netlify
 
+### IMPORTANTE: Configuração das Variáveis de Ambiente
+
 1. Faça push do código para o GitHub
 2. Conecte seu repositório no Netlify
-3. Configure a variável de ambiente no Netlify:
+3. **Configure a variável de ambiente no Netlify (PASSO CRÍTICO):**
    - Vá em Site settings > Environment variables
-   - Adicione: `VITE_REPLICATE_API_TOKEN` com sua chave da API do Replicate
-   - IMPORTANTE: O nome deve ser exatamente `VITE_REPLICATE_API_TOKEN`
-4. O deploy será automático
+   - Clique em "Add a variable"
+   - **Key:** `VITE_REPLICATE_API_TOKEN` (exatamente assim)
+   - **Value:** Sua chave da API do Replicate (ex: r8_abc123...)
+   - **Scopes:** Selecione "All deploy contexts"
+   - Clique em "Create variable"
+4. **Faça um novo deploy:**
+   - Vá na aba "Deploys"
+   - Clique em "Trigger deploy" > "Deploy site"
+   - Aguarde o deploy completar
+
+### Verificação
+
+Após o deploy, abra o console do navegador na aplicação. Você verá logs detalhados mostrando se o token foi encontrado.
+
+### Troubleshooting
+
+Se ainda não funcionar:
+1. Verifique se o nome da variável está exatamente como `VITE_REPLICATE_API_TOKEN`
+2. Certifique-se de que fez um novo deploy após adicionar a variável
+3. Verifique se sua chave da API do Replicate está correta
+4. Abra o console do navegador para ver os logs de debug
 
 ## Desenvolvimento Local
 

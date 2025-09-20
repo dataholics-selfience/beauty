@@ -4,23 +4,43 @@ export const transformImage = async (
   onProgress?: (progress: number) => void
 ): Promise<string> => {
   try {
-    console.log('Iniciando transformação da imagem...');
+    console.log('=== INICIANDO TRANSFORMAÇÃO ===');
     onProgress?.(10);
 
     // Converter imagem para base64
     const imageBase64 = await fileToBase64(image);
     onProgress?.(20);
 
+    // Obter token - versão simplificada
     const apiToken = import.meta.env.VITE_REPLICATE_API_TOKEN;
-    console.log('API Token check:', apiToken ? 'Token found' : 'Token not found');
-    console.log('Environment variables:', import.meta.env);
+    
+    console.log('=== DEBUG COMPLETO ===');
+    console.log('Todas as variáveis import.meta.env:', import.meta.env);
+    console.log('VITE_REPLICATE_API_TOKEN existe?', !!apiToken);
+    console.log('Valor do token (primeiros 10 chars):', apiToken ? apiToken.substring(0, 10) + '...' : 'UNDEFINED');
+    console.log('Tipo do token:', typeof apiToken);
+    console.log('======================');
     
     if (!apiToken) {
-      throw new Error('Token da API Replicate não configurado. Verifique se VITE_REPLICATE_API_TOKEN está configurado no Netlify.');
+      const availableVars = Object.keys(import.meta.env).join(', ');
+      throw new Error(`Token da API Replicate não encontrado!
+
+DIAGNÓSTICO:
+- Variável procurada: VITE_REPLICATE_API_TOKEN
+- Variáveis disponíveis: ${availableVars}
+- Total de variáveis: ${Object.keys(import.meta.env).length}
+
+SOLUÇÃO:
+1. No Netlify: Site Settings > Environment Variables
+2. Adicione: VITE_REPLICATE_API_TOKEN = sua_chave_replicate
+3. Faça novo deploy
+4. Certifique-se que a chave começa com 'r8_'`);
     }
 
     onProgress?.(30);
 
+    console.log('Fazendo requisição para Replicate...');
+    
     // Criar predição na Replicate
     const response = await fetch('https://api.replicate.com/v1/predictions', {
       method: 'POST',
@@ -29,7 +49,7 @@ export const transformImage = async (
         'Authorization': `Token ${apiToken}`,
       },
       body: JSON.stringify({
-        version: 'tencentarc/photomaker:ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4',
+        version: 'ddfc2b08d209f9fa8c1eca692712918bd449f695dabb4a958da31802a9570fe4',
         input: {
           image: imageBase64,
           prompt: prompt,
@@ -42,7 +62,8 @@ export const transformImage = async (
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(`Erro da API: ${JSON.stringify(errorData)}`);
+      console.error('Erro da API Replicate:', errorData);
+      throw new Error(`Erro da API Replicate: ${response.status} - ${JSON.stringify(errorData)}`);
     }
 
     const prediction = await response.json();
@@ -58,10 +79,13 @@ export const transformImage = async (
     return result;
 
   } catch (error) {
-    console.error('Erro ao transformar imagem:', error);
+    console.error('=== ERRO COMPLETO ===');
+    console.error('Erro:', error);
+    console.error('Stack:', error instanceof Error ? error.stack : 'No stack');
+    console.error('====================');
     
     if (error instanceof Error) {
-      throw new Error(`Falha na transformação: ${error.message}`);
+      throw error;
     }
     
     throw new Error('Erro desconhecido na transformação da imagem');
